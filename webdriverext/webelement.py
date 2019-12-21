@@ -4,5 +4,8 @@ from .findelement import FindElementMixin
 
 
 class WebElement(FindElementMixin, _WebElement):
-    pass
+
+    def set_property(self, name, value):
+        self.parent.execute_script('arguments[0][arguments[1]] = arguments[2]', self, name, value)
+    
 
