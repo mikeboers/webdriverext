@@ -1,6 +1,8 @@
 import functools
 import time
+import datetime
 
+from .utils import call_until_true
 
 class Download(object):
 
@@ -35,33 +37,35 @@ class Download(object):
         self.refresh()
         return '<webdriverext.Download #{id}: {fileSize} bytes {state} at {filename!r}>'.format(**self.data)
 
-    by_extension_id = property(lambda self: self.get('byExtensionId'))
-    by_extension_name = property(lambda self: self.get('byExtensionName'))
-    bytes_received = property(lambda self: self.get('bytesReceived'))
-    can_resume = property(lambda self: self.get('canResume'))
-    danger = property(lambda self: self.get('danger'))
-    end_time = property(lambda self: self.get('endTime'))
-    exists = property(lambda self: self.get('exists'))
-    file_size = property(lambda self: self.get('fileSize'))
-    filename = property(lambda self: self.get('filename'))
-    final_url = property(lambda self: self.get('finalUrl'))
-    incognito = property(lambda self: self.get('incognito'))
-    mime = property(lambda self: self.get('mime'))
-    paused = property(lambda self: self.get('paused'))
-    referrer = property(lambda self: self.get('referrer'))
-    start_time = property(lambda self: self.get('startTime'))
-    state = property(lambda self: self.get('state'))
-    total_bytes = property(lambda self: self.get('totalBytes'))
-    url = property(lambda self: self.get('url'))
+    def _make_property(name, timestamp=False):
+        @property
+        def _property(self):
+            value = self.get(name)
+            if value and timestamp:
+                value = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
+            return value
+        return _property
+
+    by_extension_id = _make_property('byExtensionId')
+    by_extension_name = _make_property('byExtensionName')
+    bytes_received = _make_property('bytesReceived')
+    can_resume = _make_property('canResume')
+    danger = _make_property('danger')
+    end_time = _make_property('end_time', timestamp=True)
+    exists = _make_property('exists')
+    file_size = _make_property('fileSize')
+    filename = _make_property('filename')
+    final_url = _make_property('finalUrl')
+    incognito = _make_property('incognito')
+    mime = _make_property('mime')
+    paused = _make_property('paused')
+    referrer = _make_property('referrer')
+    start_time = _make_property('startTime', timestamp=True)
+    state = _make_property('state')
+    total_bytes = _make_property('totalBytes')
+    url = _make_property('url')
 
     def wait(self, timeout=10):
-        end = time.monotonic() + timeout
-        delay = 0.1
-        while self.in_progress:
-            delay = min(delay, end - time.monotonic())
-            if delay < 0:
-                break
-            time.sleep(delay)
-            self.refresh()
-        return self.complete
+        call_until_true(self.refresh, key=lambda _: not self.in_progress, timeout=timeout)
+        return None if self.in_progress else self.complete
 

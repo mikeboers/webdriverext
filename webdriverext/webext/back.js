@@ -1,5 +1,5 @@
 
-let VERBOSITY = 1
+let VERBOSITY = 2
 let LOCATION = 'back'
 
 function debug(level) {
@@ -24,7 +24,7 @@ function reply(conn, src, msg) {
 
 let connections = {}
 let handlers = {}
-let nextDownloadFilename = null
+var downloadFilename = null // must be var!
 let tidCount = 0
 
 function broadcast(msg) {
@@ -96,14 +96,14 @@ handlers.chrome = function(conn, msg) {
 }
 
 handlers.setDownloadFilename = function(conn, msg) {
-    nextDownloadFilename = msg.name
+    downloadFilename = msg.name
 }
 
 chrome.downloads.onDeterminingFilename.addListener(function (item, suggest) {
-    debug(1, "downloads.onDeterminingFilename:", item)
-    if (nextDownloadFilename) {
-        suggest({filename: nextDownloadFilename})
-        nextDownloadFilename = null
+    debug(1, "downloads.onDeterminingFilename:", item, downloadFilename)
+    if (downloadFilename) {
+        suggest({filename: downloadFilename})
+        downloadFilename = null
     } else {
         suggest()
     }

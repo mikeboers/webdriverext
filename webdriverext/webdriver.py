@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 import atexit
 import base64 as b64
+import datetime as dt
 import os
 import time
 import weakref
@@ -10,6 +11,7 @@ from selenium.webdriver import Chrome as _Chrome, ChromeOptions
 from .download import Download
 from .error import JavascriptError
 from .findelement import FindElementMixin
+from .utils import call_until_true
 from .webelement import WebElement
 
 
@@ -93,6 +95,9 @@ class Chrome(FindElementMixin, _Chrome):
         """
         return self.execute_async_chrome('cookies.getAll', details)
 
+    def set_download_filename(self, filename):
+        self.execute_script('WebDriverExt.setDownloadFilename(arguments[0])', filename)
+
     def download(self, url, **options):
         options['url'] = url
         id_ = self.execute_async_chrome('downloads.download', options)
@@ -103,7 +108,24 @@ class Chrome(FindElementMixin, _Chrome):
         return obj
 
     def get_downloads(self, **query):
+        
+        wait = query.pop('wait', False)
+        timeout = query.pop('timeout', 10)
+
+        # Convert times to ms.
+        for key, value in query.items():
+            if isinstance(value, dt.datetime):
+                query[key] = value.isoformat('T') #int(value.timestamp() * 1000)
+
+        if wait:
+            return call_until_true(self._get_downloads, kwargs=query, timeout=timeout) or []
+        else:
+            return self._get_downloads(**query)
+
+    def _get_downloads(self, **query):
+
         ret = []
+
         for data in self.execute_async_chrome('downloads.search', query):
             id_ = data['id']
             try:
@@ -113,6 +135,13 @@ class Chrome(FindElementMixin, _Chrome):
             obj.data.update(data)
             ret.append(obj)
         return ret
+
+    def get_download(self, **kwargs):
+        ret = self.get_downloads(**kwargs)
+        if len(ret) != 1:
+            raise ValueError(f'found {len(ret)} downloads')
+        return ret[0]
+
 
 
 
