@@ -3,9 +3,11 @@ import atexit
 import base64 as b64
 import os
 import time
+import weakref
 
 from selenium.webdriver import Chrome as _Chrome, ChromeOptions
 
+from .download import Download
 from .error import JavascriptError
 from .findelement import FindElementMixin
 from .webelement import WebElement
@@ -38,6 +40,8 @@ class Chrome(FindElementMixin, _Chrome):
                     })
                 """
             })
+
+        self._downloads = weakref.WeakValueDictionary()
 
     def __del__(self):
         self.quit()
@@ -91,7 +95,24 @@ class Chrome(FindElementMixin, _Chrome):
 
     def download(self, url, **options):
         options['url'] = url
-        return self.execute_async_chrome('downloads.download', options)
+        id_ = self.execute_async_chrome('downloads.download', options)
+        try:
+            obj = self._downloads[id_]
+        except KeyError:
+            obj = self._downloads[id_] = Download(self, id_)
+        return obj
 
     def get_downloads(self, **query):
-        return self.execute_async_chrome('downloads.search', query)
+        ret = []
+        for data in self.execute_async_chrome('downloads.search', query):
+            id_ = data['id']
+            try:
+                obj = self._downloads[id_]
+            except KeyError:
+                obj = self._downloads[id_] = Download(self, id_)
+            obj.data.update(data)
+            ret.append(obj)
+        return ret
+
+
+
