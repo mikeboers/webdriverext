@@ -53,7 +53,7 @@ let routeMessage = function(msg) {
 
 port.onMessage.addListener(routeMessage)
 
-window.addEventListener("message", function(e) {
+window.addEventListener('message', function(e) {
     if (e.source != window) return   // Must be from this page.
     if (!e.data.webdriverext) return // Must be webdriverext.
     if (e.data.via_main) return      // Must not be from us.
@@ -68,10 +68,12 @@ function getPageURL(url) {
 }
 
 function injectJS(url) {
-    let script = document.createElement("script");
-    script.type = "text/javascript";
+    let script = document.createElement('script');
+    script.type = 'text/javascript';
     script.src = url
     document.head.appendChild(script);
 }
 
-injectJS(getPageURL("page.js")); // Depends on UI.
+injectJS(getPageURL('page.js')); // Depends on UI.
+
+

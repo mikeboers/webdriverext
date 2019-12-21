@@ -61,7 +61,7 @@ chrome.runtime.onConnect.addListener(function (conn) {
                 func(conn, msg)
             } catch (error) {
                 debug(0, "uncaught", error)
-                reply(conn, msg, {error: error})
+                reply(conn, msg, {error: error.toString()})
             }
         } else {
             debug(0, "unknown message type:", msg)
@@ -78,22 +78,21 @@ handlers.error = function(conn, msg) {
     throw "test error"
 }
 
-handlers.cookies = function(conn, msg) {
-    chrome.cookies.getAll({url: msg.url}, function(cookies) {
-        reply(conn, msg, {cookies: cookies})
-    })
+function getChrome(name) {
+    let parts = name.split('.')
+    let obj = chrome
+    for (let i in parts) {
+        obj = obj[parts[i]]
+    }
+    return obj
 }
 
-handlers.download = function(conn, msg) {
-    chrome.downloads.download(msg.options, function(id) {
-        reply(conn, msg, {id: id})
-    })
-}
-
-handlers.getDownloads = function(conn, msg) {
-    chrome.downloads.search(msg.query, function(items) {
-        reply(conn, msg, {downloads: items})
-    })
+handlers.chrome = function(conn, msg) {
+    let func = getChrome(msg.func)
+    let args = msg.args.concat([function(result) {
+        reply(conn, msg, {result: result})
+    }])
+    func.apply(null, args)
 }
 
 handlers.setDownloadFilename = function(conn, msg) {
@@ -110,21 +109,18 @@ chrome.downloads.onDeterminingFilename.addListener(function (item, suggest) {
     }
 })
 
-chrome.downloads.onCreated.addListener(function (item) {
-    debug(1, "downloads.onCreated:", item)
-    broadcast({
-        type: 'downloadCreated',
-        item: item
+function broadcastChromeEvent(name) {
+    getChrome(name).addListener(function (data) {
+        broadcast({
+            type: 'event',
+            event: 'chrome.' + name,
+            data: data
+        })
     })
-})
+}
 
-chrome.downloads.onChanged.addListener(function (delta) {
-    debug(2, "downloads.onChanged:", delta)
-    broadcast({
-        type: 'downloadChanged',
-        delta: delta
-    })
-})
+broadcastChromeEvent('downloads.onCreated')
+broadcastChromeEvent('downloads.onChanged')
 
 
 

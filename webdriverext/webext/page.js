@@ -25,9 +25,11 @@ WebDriverExt = {};
 
 (function(M) { // scope wrapper
 
-M.handlers = {}
+M.messageHandlers = {}
+M.eventHandlers = {}
 M.callbacks = {}
 M.tidCounter = 0
+
 
 window.addEventListener('message', function(e) {
 
@@ -47,19 +49,26 @@ window.addEventListener('message', function(e) {
         return
     }
 
-    let func = M.handlers[msg.type]
+    let func = M.messageHandlers[msg.type]
     if (func) {
         func(msg)
         return
     }
 
-    debug(0, "unknown message type:", msg)
+    debug(0, "unhandled message:", msg)
     
 }, false)
 
 
-M.handlers.downloadCreated = function(msg) {}
-M.handlers.downloadChanged = function(msg) {}
+M.messageHandlers.event = function(msg) {
+    let func = M.eventHandlers[msg.event]
+    if (func) {
+        func(msg.data)
+        return
+    }
+    debug(0, "unhandled event:", msg)
+}
+
 
 M.post = function(msg, callback, callbackCount) {
 
@@ -80,25 +89,14 @@ M.post = function(msg, callback, callbackCount) {
 
 }
 
-M.getCookies = function(url, callback) {
+M.chrome = function(func) {
+    let args = Array.prototype.slice.call(arguments, 1, -1)
+    let callback = arguments[arguments.length - 1]
     M.post({
-        type: 'cookies',
-        url: url == undefined ? window.location.href : url
-    }, callback ? (msg) => callback(msg.cookies) : null)
-}
-
-M.download = function(options, callback) {
-    M.post({
-        type: 'download',
-        options: options
-    }, callback ? (msg) => callback(msg.id) : null)
-}
-
-M.getDownloads = function(query, callback) {
-    M.post({
-        type: 'getDownloads',
-        query: query
-    }, callback ? (msg) => callback(msg.downloads) : null)
+        type: 'chrome',
+        func: func,
+        args: args
+    }, callback)
 }
 
 M.setDownloadFilename = function(filename) {
@@ -107,6 +105,7 @@ M.setDownloadFilename = function(filename) {
         filename: filename
     })
 }
+
 
 
 })(WebDriverExt)

@@ -6,8 +6,9 @@ import time
 
 from selenium.webdriver import Chrome as _Chrome, ChromeOptions
 
-from .webelement import WebElement
+from .error import JavascriptError
 from .findelement import FindElementMixin
+from .webelement import WebElement
 
 
 class Chrome(FindElementMixin, _Chrome):
@@ -63,22 +64,34 @@ class Chrome(FindElementMixin, _Chrome):
     def post(self, url, data=None):
         return self.xhr('POST', url, data)
 
-    def execute_async_hook(self, name, *args):
-        return self.execute_async_script(f'WebDriverExt.{name}.apply(null, arguments)', *args)
+    def execute_async_chrome(self, name, *args):
+        """Call a function from the webext API.
+    
+        :param str name: Dotted string name of function to call under ``chrome``
+            object, e.g. ``cookies.getAll``.
 
-    def get_cookies(self, url=None):
+        Remaining arguments are passed to the function.
+
+        This assumes that the last argument to the function is a callback for
+        the result, which is required for the operation of this function.
+
+        """
+        res = self.execute_async_script('WebDriverExt.chrome.apply(null, arguments)', name, *args)
+        if res.get('error'):
+            raise JavascriptError(res['error'])
+        return res['result']
+
+    def get_cookies(self, **details):
         """Get cookies for the given URL.
-
-        :param str url: The URL to get cookies for; ``None`` implies the current page.
     
         .. seealso:: https://developer.chrome.com/extensions/cookies#method-getAll
 
         """
-        return self.execute_async_hook('getCookies', url)
+        return self.execute_async_chrome('cookies.getAll', details)
 
-    def download(self, url, **opts):
-        opts['url'] = url
-        return self.execute_async_hook('download', opts)
+    def download(self, url, **options):
+        options['url'] = url
+        return self.execute_async_chrome('downloads.download', options)
 
     def get_downloads(self, **query):
-        return self.execute_async_hook('getDownloads', query)
+        return self.execute_async_chrome('downloads.search', query)
