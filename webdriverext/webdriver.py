@@ -25,6 +25,7 @@ class Chrome(FindElementMixin, _Chrome):
 
         super().__init__(*args, **kwargs)
 
+        # TODO: Put this behind a flag or something.
         atexit.register(self.quit)
         
         # Disable navigator.webdriver, which breaks a LOT of sites.
@@ -36,6 +37,9 @@ class Chrome(FindElementMixin, _Chrome):
                     })
                 """
             })
+
+    def __del__(self):
+        self.quit()
 
     def xhr(self, method, url, data=None):
 
@@ -59,5 +63,22 @@ class Chrome(FindElementMixin, _Chrome):
     def post(self, url, data=None):
         return self.xhr('POST', url, data)
 
+    def execute_async_hook(self, name, *args):
+        return self.execute_async_script(f'WebDriverExt.{name}.apply(null, arguments)', *args)
+
     def get_cookies(self, url=None):
-        pass
+        """Get cookies for the given URL.
+
+        :param str url: The URL to get cookies for; ``None`` implies the current page.
+    
+        .. seealso:: https://developer.chrome.com/extensions/cookies#method-getAll
+
+        """
+        return self.execute_async_hook('getCookies', url)
+
+    def download(self, url, **opts):
+        opts['url'] = url
+        return self.execute_async_hook('download', opts)
+
+    def get_downloads(self, **query):
+        return self.execute_async_hook('getDownloads', query)

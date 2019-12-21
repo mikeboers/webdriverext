@@ -94,6 +94,13 @@ M.download = function(options, callback) {
     }, callback ? (msg) => callback(msg.id) : null)
 }
 
+M.getDownloads = function(query, callback) {
+    M.post({
+        type: 'getDownloads',
+        query: query
+    }, callback ? (msg) => callback(msg.downloads) : null)
+}
+
 M.setDownloadFilename = function(filename) {
     M.post({
         type: 'setDownloadFilename',

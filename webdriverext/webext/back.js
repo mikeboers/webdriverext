@@ -90,9 +90,9 @@ handlers.download = function(conn, msg) {
     })
 }
 
-handlers.checkDownload = function(conn, msg) {
-    chrome.downloads.search({id: msg.id}, function(items) {
-        reply(conn, msg, {download: items[0]})
+handlers.getDownloads = function(conn, msg) {
+    chrome.downloads.search(msg.query, function(items) {
+        reply(conn, msg, {downloads: items})
     })
 }
 

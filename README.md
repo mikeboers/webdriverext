@@ -8,5 +8,7 @@ Major features:
 - webext browser extension to provide lower level access to:
     - cookies
     - downloads
-- slight API improvements
+    - executable cleanup
+- slight API improvements:
+    - find_element methods take default so they don't throw errors
 
