@@ -66,6 +66,6 @@ class Download(object):
     url = _make_property('url')
 
     def wait(self, timeout=10):
-        call_until_true(self.refresh, key=lambda _: not self.in_progress, timeout=timeout)
+        call_until_true(self.refresh, __key__=lambda _: not self.in_progress, __timeout__=timeout)
         return None if self.in_progress else self.complete
 

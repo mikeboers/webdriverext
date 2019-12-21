@@ -7,13 +7,21 @@ def jprint(obj, indent=4, sort_keys=True):
 
 
 
-def call_until_true(call, args=(), kwargs={}, key=lambda x: bool(x), timeout=10):
+def call_until_true(func, *args, **kwargs):
+    key = kwargs.pop('__key__', None)
+    timeout = kwargs.pop('__timeout__', None)
+    return call_until_true_ext(func, args, kwargs, key, timeout)
+
+def call_until_true_ext(func, args, kwargs, key=None, timeout=10):
+
+    key = key or (lambda x: bool(x))
+    timeout = timeout or 10
 
     end = time.monotonic() + timeout
     delay = 0.1
     while True:
 
-        obj = call(*args, **kwargs)
+        obj = func(*args, **kwargs)
         if key(obj):
             return obj
 

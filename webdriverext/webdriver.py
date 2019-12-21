@@ -118,7 +118,7 @@ class Chrome(FindElementMixin, _Chrome):
                 query[key] = value.isoformat('T') #int(value.timestamp() * 1000)
 
         if wait:
-            return call_until_true(self._get_downloads, kwargs=query, timeout=timeout) or []
+            return call_until_true(self._get_downloads, **query, __timeout__=timeout) or []
         else:
             return self._get_downloads(**query)
 
