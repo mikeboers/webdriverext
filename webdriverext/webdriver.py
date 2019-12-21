@@ -95,6 +95,14 @@ class Chrome(FindElementMixin, _Chrome):
         """
         return self.execute_async_chrome('cookies.getAll', details)
 
+    def set_cookie(self, cookie):
+        """Get cookies for the given URL.
+    
+        .. seealso:: https://developer.chrome.com/extensions/cookies#method-getAll
+
+        """
+        return self.execute_async_chrome('cookies.set', cookie)
+
     def set_download_filename(self, filename):
         self.execute_script('WebDriverExt.setDownloadFilename(arguments[0])', filename)
 
