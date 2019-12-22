@@ -90,7 +90,8 @@ function getChrome(name) {
 handlers.chrome = function(conn, msg) {
     let func = getChrome(msg.func)
     let args = msg.args.concat([function(result) {
-        reply(conn, msg, {result: result})
+        // Null is required because undefined gets filtered out.
+        reply(conn, msg, {result: result || null})
     }])
     func.apply(null, args)
 }
@@ -110,17 +111,26 @@ chrome.downloads.onDeterminingFilename.addListener(function (item, suggest) {
 })
 
 function broadcastChromeEvent(name) {
-    getChrome(name).addListener(function (data) {
+    let args = [function (data) {
         broadcast({
             type: 'event',
             event: 'chrome.' + name,
             data: data
         })
-    })
+    }].concat(Array.prototype.slice.call(arguments, 1))
+    console.log(args)
+    let event = getChrome(name)
+    event.addListener.apply(event, args)
 }
 
 broadcastChromeEvent('downloads.onCreated')
 broadcastChromeEvent('downloads.onChanged')
+
+broadcastChromeEvent(
+    'webRequest.onHeadersReceived',
+    {urls: ['https://*/*', 'http://*/*']}, // filters
+    ['responseHeaders', 'extraHeaders']
+)
 
 
 

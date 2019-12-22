@@ -1,14 +1,22 @@
 
-var VERBOSITY = 1
-var LOCATION = 'page'
+WebDriverExt = {};
+
+(function(M) { // scope wrapper
+
+
+M.VERBOSITY = 2
+let LOCATION = 'page'
 
 function debug(level) {
-    if (level <= VERBOSITY) {
+    if (level <= M.VERBOSITY) {
         arguments[0] = '[webdriverext/' + LOCATION + ']'
         console.log.apply(null, arguments)
     }
 }
 debug(0, "init")
+
+// === end common
+
 
 function reply(src, msg) {
     msg.src = LOCATION
@@ -19,11 +27,6 @@ function reply(src, msg) {
     WebDriverExt.post(msg)
 }
 
-// === end common ===
-
-WebDriverExt = {};
-
-(function(M) { // scope wrapper
 
 M.messageHandlers = {}
 M.eventHandlers = {}
@@ -69,6 +72,10 @@ M.messageHandlers.event = function(msg) {
     debug(0, "unhandled event:", msg)
 }
 
+M.eventHandlers['chrome.webRequest.onHeadersReceived'] = function(msg) {
+    console.log(msg)
+}
+
 
 M.post = function(msg, callback, callbackCount) {
 
@@ -99,10 +106,30 @@ M.chrome = function(func) {
     }, callback)
 }
 
+M.chromeBatch = function(batch, callback) {
+    var results = []
+    let onResult = function(i, data) {
+        results[i] = data
+        if (results.length == batch.length) {
+            callback(results)
+        }
+    }
+    for (let i in batch) {
+        let args = batch[i].concat([onResult.bind(null, i)])
+        M.chrome.apply(null, args)
+    }
+}
+
 M.setDownloadFilename = function(filename) {
     M.post({
         type: 'setDownloadFilename',
         filename: filename
+    })
+}
+
+M.captureRequests = function(pattern) {
+    M.post({
+        type: 'captureRequests'
     })
 }
 

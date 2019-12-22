@@ -26,6 +26,13 @@ class Chrome(FindElementMixin, _Chrome):
             __file__, '..', 'webext'
         ))))
 
+        prefs = {
+            'profile.content_settings.exceptions.automatic_downloads.*.setting': 1,
+            'profile.default_content_settings.popups': 0,
+            'download.prompt_for_download': False,
+        }
+        options.add_experimental_option('prefs', prefs)
+
         navigator_webdriver = kwargs.pop('navigator_webdriver', True)
 
         super().__init__(*args, **kwargs)
@@ -87,6 +94,14 @@ class Chrome(FindElementMixin, _Chrome):
             raise JavascriptError(res['error'])
         return res['result']
 
+    def execute_async_chrome_batch(self, batch):
+        all_res = self.execute_async_script('WebDriverExt.chromeBatch.apply(null, arguments)', batch)
+        for i, res in enumerate(all_res):
+            if res.get('error'):
+                raise JavascriptError(res['error'])
+            all_res[i] = res['result']
+        return all_res
+
     def get_cookies(self, **details):
         """Get cookies for the given URL.
     
@@ -102,6 +117,11 @@ class Chrome(FindElementMixin, _Chrome):
 
         """
         return self.execute_async_chrome('cookies.set', cookie)
+
+    def set_cookies(self, cookies):
+        return self.execute_async_chrome_batch([
+            ('cookies.set', cookie) for cookie in cookies
+        ])
 
     def set_download_filename(self, filename):
         self.execute_script('WebDriverExt.setDownloadFilename(arguments[0])', filename)

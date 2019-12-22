@@ -25,7 +25,8 @@
 
         "cookies",
         "downloads",
-
+        "webRequest",
+        
         "http://*/*",
         "https://*/*"
         
